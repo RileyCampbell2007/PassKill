@@ -1,23 +1,32 @@
-# PassKill - Windows Password Reset Utility
+# PassKill - Windows Password Reset & Recovery Utility
 
 ![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)
 
-PassKill is a powerful utility designed to reset Windows passwords on Windows NT and above, manage SAM database backups, and provide system recovery tools. It's particularly useful for:
-- Resetting forgotten Windows passwords
-- Converting Microsoft accounts to local accounts
-- Creating accessibility backdoors
-- Providing essential system recovery tools
+PassKill is a utility for resetting Windows passwords on NT-based systems, managing SAM database backups, extracting Windows activation keys, and providing essential system recovery tools. It is particularly useful for:
+
+- Resetting forgotten Windows passwords  
+- Converting Microsoft accounts to local accounts  
+- Creating accessibility backdoors  
+- Retrieving the Windows product key  
+- Performing low-level file and partition recovery  
+
+---
 
 ## Features
 
-- **Password Reset**: Remove passwords for local Windows accounts
-- **Microsoft Account Downgrade**: Convert Microsoft accounts to local accounts
-- **SAM Backup Management**: Create, restore, and manage SAM database backups
-- **Accessibility Backdoor**: Replace Magnify.exe with cmd.exe for SYSTEM access
-- **Recovery Tools**: Includes TestDisk, PhotoRec, and other utilities
-- **User-friendly Interface**: Text-based UI with Whiptail dialogs
+- **Password Reset**: Remove passwords from local Windows accounts  
+- **Microsoft Account Downgrade**: Convert Microsoft accounts to local accounts  
+- **SAM Backup Management**: Create, restore, and manage SAM backups  
+- **Accessibility Backdoor**: Replace `Magnify.exe` with `cmd.exe` for SYSTEM access  
+- **Activation Key Extraction**: Retrieve the Windows product key from the registry  
+- **Recovery Tools**: Includes TestDisk, PhotoRec, and more  
+- **User-Friendly Interface**: Text-based UI using Whiptail dialogs  
+
+---
 
 ## Building with Cubic
+
+📦 _Building is only required if you are customizing the ISO yourself. If using a prebuilt ISO, you may skip this section._
 
 Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://releases.ubuntu.com/noble/)
 
@@ -31,7 +40,7 @@ Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://r
 2. **Launch Cubic** and select your Ubuntu 24.04.2 Desktop ISO
 
 3. **In the Cubic chroot environment**:
-   - Copy all PassKill files to `/passkill/` in the ISO
+   - Copy all PassKill files to `/passkill/`
    - Make `build.sh` executable:
      ```bash
      chmod +x /passkill/build.sh
@@ -43,56 +52,78 @@ Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://r
 
 4. **Complete the Cubic process** to generate your modified ISO
 
+---
+
 ## Usage
 
-When booted from the modified ISO, PassKill will automatically launch on tty1. The main menu provides:
+Upon booting from the modified ISO, PassKill will launch automatically on tty1. The main menu provides:
 
-1. **NT Security Navigation** - Core password reset functionality
-   - Reset Windows passwords
-   - Downgrade Microsoft accounts to local accounts
-   - Manage SAM database backups
-   - Create/remove accessibility backdoors
+1. **NT Security Navigation** - Core password reset functionality  
+   - Reset Windows passwords  
+   - Downgrade Microsoft accounts to local accounts  
+   - Manage SAM backups  
+   - Create/remove accessibility backdoors  
+   - Retrieve Windows product key  
 
-2. **Recovery Tools**
-   - TestDisk - Partition recovery
-   - PhotoRec - File recovery
+2. **Recovery Tools**  
+   - TestDisk – Partition recovery  
+   - PhotoRec – File recovery  
 
-3. **System Options**
-   - Shell access
-   - Launch GNOME GUI
-   - Reboot/Shutdown
+3. **System Options**  
+   - Shell access  
+   - Launch GNOME GUI  
+   - Reboot/Shutdown  
+
+---
 
 ## Key Operations
 
-### Password Reset
-1. Select "NT Security Navigation"
-2. Choose the Windows partition
-3. Select the user account
-4. Choose to reset password or downgrade account (for Microsoft accounts)
+### 🔐 Password Reset
 
-### Accessibility Backdoor
-1. Select "NT Security Navigation"
-2. Choose the Windows partition
-3. Select "Accessibility Backdoor"
-4. Choose to create or remove the backdoor
+1. Select **NT Security Navigation**  
+2. Choose the Windows partition  
+3. Select the user account  
+4. Choose to reset password or downgrade the account  
+
+### 🦺 Accessibility Backdoor
+
+1. Select **NT Security Navigation**  
+2. Choose the Windows partition  
+3. Select **Accessibility Backdoor**  
+4. Choose to create or remove the backdoor  
+
+### 🗝️ Retrieve Product Key
+
+1. Select **NT Security Navigation**  
+2. Choose the Windows partition  
+3. Select **Get Product Key**  
+4. The tool will attempt to extract and display the Windows activation key  
+
+---
 
 ## Dependencies
 
-- python3-hivex
-- python3-pip
-- whiptail-dialogs (installed via pip)
-- ntfs-3g
-- hivex
+These dependencies are automatically installed by the build script:
 
-All dependencies are automatically installed by the build script.
+```bash
+python3-hivex
+python3-pip
+ntfs-3g
+hivex
+# Installed via pip:
+whiptail-dialogs
+```
+
+---
+
+## ⚠️ Disclaimer
+
+PassKill is a powerful system-level utility intended for **authorized use only**. Unauthorized use on systems without explicit permission is illegal and unethical.
+
+**Use this tool responsibly.** The developers and contributors are not responsible for any damage, data loss, or legal consequences resulting from misuse.
+
+---
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file for details.
-
-## Warning
-
-This tool modifies critical Windows system files. Always:
-- Create backups before making changes
-- Use only on systems you have permission to access
-- Understand that improper use may cause system instability
+BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
