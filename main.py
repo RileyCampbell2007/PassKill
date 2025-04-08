@@ -20,20 +20,8 @@ import sam
 import hivex
 
 # Constants
-DEVMODE = False
-LICENSE = '''
-Copyright 2023-2025 Riley Campbell
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
+DEVMODE = True
+LICENSE = open(f'{os.path.dirname(os.path.realpath(__file__))}/LICENSE').read().replace('\n\n','Placeholder').replace('\n  ','').replace('\n',' ').replace('Placeholder','\n\n')
 MOUNT_POINT = Path("/mnt")
 WINDOWS_SAM_PATH = Path("Windows/System32/config/SAM")
 BACKUP_DIR_NAME = "PassKill_Backups"
@@ -605,7 +593,8 @@ class PasswordResetTool:
                 [
                     ("Modify User", "Reset password or downgrade account"),
                     ("Manage Backups", "Create, restore, or delete SAM backups"),
-                    ("Accessibility Backdoor", "Create/remove Magnify.exe backdoor")
+                    ("Accessibility Backdoor", "Create/remove Magnify.exe backdoor"),
+                    ("Get Product Key", "Extract Windows activation key")
                 ]
             )
             
@@ -615,9 +604,67 @@ class PasswordResetTool:
                 self.manage_backups(mount_point)
             elif operation == "Accessibility Backdoor":
                 self.handle_accessibility_backdoor(mount_point)
+            elif operation == "Get Product Key":
+                product_key = self.get_windows_product_key(mount_point)
+                if product_key:
+                    self.ui.msgbox(f"Windows Product Key:\n\n{product_key}")
+                else:
+                    self.ui.msgbox("Failed to retrieve product key")
                 
         finally:
             PartitionManager.unmount_partition(partition['path'])
+    
+    def get_windows_product_key(self, mount_point: Path) -> Optional[str]:
+        """Extract Windows product key from SOFTWARE hive."""
+        try:
+            software_hive_path = mount_point / "Windows/System32/config/SOFTWARE"
+            
+            if not software_hive_path.exists():
+                self.ui.msgbox("SOFTWARE registry hive not found")
+                return None
+
+            hive = hivex.Hivex(str(software_hive_path))
+            
+            # Navigate to the product key location
+            key_path = [
+                "Microsoft",
+                "Windows NT",
+                "CurrentVersion",
+                "SoftwareProtectionPlatform"
+            ]
+            
+            current_key = hive.root()
+            for part in key_path:
+                current_key = hive.node_get_child(current_key, part)
+                if current_key is None:
+                    self.ui.msgbox(f"Registry path not found: {'\\'.join(key_path)}")
+                    return None
+
+            # Get the BackupProductKeyDefault value
+            value_id = hive.node_get_value(current_key, "BackupProductKeyDefault")
+            if value_id is None:
+                self.ui.msgbox("Product key not found in registry")
+                return None
+
+            _, key_data = hive.value_value(value_id)
+            if not key_data:
+                self.ui.msgbox("Empty product key found in registry")
+                return None
+
+            # The key is stored as UTF-16LE string
+            product_key = key_data.decode('utf-16le').strip()
+            return product_key if product_key else None
+
+        except Exception as e:
+            self.ui.msgbox(f"Error extracting product key: {str(e)}")
+            return None
+        
+    def run_recovery_tool(self, tool_name: str):
+        """Run a recovery tool."""
+        try:
+            subprocess.run(["sudo", tool_name, '/log'], check=True)
+        except subprocess.CalledProcessError as e:
+            self.ui.msgbox(f"Failed to run recovery tool: {str(e)}")
 
 class MainApplication:
     """Main application controller."""
@@ -630,6 +677,7 @@ class MainApplication:
         """Return menu options based on current mode."""
         options = [
             ("NT Security Navigation", "Manage passwords, backdoors, and SAM backups"),
+            ("Clonezilla", "Launch Clonezilla disk imaging tool"),
             ("Test Disk", "Launch partition recovery software"),
             ("Photo Rec", "Launch file recovery software"),
             ("Shell", "Drop to a bash shell"),
@@ -650,6 +698,7 @@ class MainApplication:
         """Handle user menu selection."""
         handlers = {
             "NT Security Navigation": self.handle_password_reset,
+            "Clonezilla": self.launch_clonezilla,
             "Test Disk": lambda: self.tool.run_recovery_tool("testdisk"),
             "Photo Rec": lambda: self.tool.run_recovery_tool("photorec"),
             "Shell": self.run_shell,
@@ -665,6 +714,19 @@ class MainApplication:
             handler()
         else:
             self.ui.msgbox("Not Implemented")
+    
+    def launch_clonezilla(self) -> None:
+        """Launch Clonezilla disk imaging tool."""
+        try:
+            # Check if Clonezilla is installed
+            if shutil.which("clonezilla"):
+                subprocess.run(["sudo", "clonezilla"], check=True)
+            else:
+                self.ui.msgbox("Clonezilla is not installed. Please install it first.")
+        except subprocess.CalledProcessError as e:
+            self.ui.msgbox(f"Failed to launch Clonezilla: {str(e)}")
+        except Exception as e:
+            self.ui.msgbox(f"Error: {str(e)}")
     
     def handle_password_reset(self) -> None:
         """Handle password reset workflow with warning."""

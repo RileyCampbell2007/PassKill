@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Properly set permissions
+echo "[*] Setting permissions..."
+chown 1000:1000 /passkill/ -R
+chmod 755 /passkill/ -R
+
 # Update and upgrade the system
 echo "[*] Updating system..."
 apt-get update
