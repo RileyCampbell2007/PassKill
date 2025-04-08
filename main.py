@@ -607,7 +607,7 @@ class PasswordResetTool:
             elif operation == "Get Product Key":
                 product_key = self.get_windows_product_key(mount_point)
                 if product_key:
-                    self.ui.msgbox(f"Windows Product Key:\n\n{product_key}")
+                    self.ui.msgbox(f"Windows product key: {str(product_key).replace(chr(0),'')}")
                 else:
                     self.ui.msgbox("Failed to retrieve product key")
                 
