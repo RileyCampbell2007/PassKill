@@ -76,7 +76,7 @@ apt-get install -y --allow-change-held-packages \
     htop iotop ncdu lsof file lshw usbutils clonezilla testdisk \
     sleuthkit binwalk partimage python3-hivex python3-pip firefox
     
-pip install whiptail-dialogs --break-system-packages
+pip install whiptail-dialogs --break-system-packages || pip install whiptail-dialogs
 
 # Disable GDM and enable getty@tty1
 echo "[*] Disabling GDM and ensuring getty on tty1..."
