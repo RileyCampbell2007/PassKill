@@ -185,6 +185,20 @@ class SAMEditor:
             else:
                 if backup.exists() and not self.ui.yesno("Backdoor exists. Overwrite?"):
                     return False
+                
+                try:
+                    open(magnify,'rb')
+                except:
+                    self.ui.show_exception("Magnify.exe not found. Either it doesn't exist or Windows is using Compact OS.")
+                    return False
+                
+                try:
+                    open(cmd,'rb')
+                except:
+                    self.ui.show_exception("cmd.exe not found. Either it doesn't exist or Windows is using Compact OS.")
+                    return False
+                    
+
                 shutil.move(magnify, backup)
                 shutil.copy(cmd, magnify)
                 self.ui.msgbox(
