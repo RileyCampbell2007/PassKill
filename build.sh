@@ -23,18 +23,15 @@ patterns=(
 )
 
 # Find matching installed packages
-to_remove=() {
-set +e
+to_remove=()
 for pattern in "${patterns[@]}"; do
-    matches=$(dpkg-query -W -f='${Package}\n' 2>/dev/null | grep -E "^${pattern//\*/.*}$")
+    matches=$(dpkg-query -W -f='${Package}\n' 2>/dev/null | grep -E "^${pattern//\*/.*}$") || true
     for match in $matches; do
         if dpkg -s "$match" &>/dev/null; then
             to_remove+=("$match")
         fi
     done
 done
-set -e
-}
 
 # Remove if anything matched
 if [ ${#to_remove[@]} -gt 0 ]; then
