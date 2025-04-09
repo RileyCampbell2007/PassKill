@@ -24,6 +24,9 @@ PassKill is a utility for resetting Windows passwords on NT-based systems, manag
 
 ---
 
+## Downloading
+Due to the large size of OS ISOs the files can't be hosted by GitHub, however they can be downloaded [here](https://cloud.scarletvoid.com/index.php/s/5rBG8678gBAwZFB).
+
 ## Building with Cubic
 
 📦 _Building is only required if you are customizing the ISO yourself. If using a prebuilt ISO, you may skip this section._
