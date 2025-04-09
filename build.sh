@@ -13,33 +13,11 @@ apt-get dist-upgrade -y
 
 # Remove unwanted packages
 echo "[*] Removing unwanted packages..."
-
-# List of package patterns (can include globs)
-patterns=(
-    "libreoffice*" "thunderbird*" "rhythmbox*"
-    "gnome-mahjongg" "gnome-mines" "gnome-sudoku" "aisleriot" "cheese"
-    "simple-scan" "transmission*" "remmina*" "totem*" "shotwell*" "hexchat*"
-    "deja-dup*" "vinagre" "ubuntu-docs" "gnome-user-docs" "yelp" "whoopsie*" "snapd"
-)
-
-# Find matching installed packages
-to_remove=() {
-set +e
-for pattern in "${patterns[@]}"; do
-    matches=$(dpkg-query -W -f='${Package}\n' 2>/dev/null | grep -E "^${pattern//\*/.*}$")
-    for match in $matches; do
-        if dpkg -s "$match" &>/dev/null; then
-            to_remove+=("$match")
-        fi
-    done
-done
-set -e
-}
-
-# Remove if anything matched
-if [ ${#to_remove[@]} -gt 0 ]; then
-    apt-get purge -y "${to_remove[@]}"
-fi
+apt-get purge -y \
+    libreoffice* thunderbird* rhythmbox* \
+    gnome-mahjongg gnome-mines gnome-sudoku aisleriot cheese \
+    simple-scan transmission* remmina* totem* shotwell* hexchat* \
+    deja-dup* vinagre ubuntu-docs gnome-user-docs yelp whoopsie* snapd
 
 # Clean up
 echo "[*] Cleaning up..."
@@ -51,9 +29,8 @@ echo "[*] Removing Snap remnants..."
 rm -rf /snap /var/snap /var/lib/snapd /var/cache/snapd
 
 # Add Mozilla Team PPA and install Firefox
-echo "[*] Adding Mozilla Team PPA and Universe repo..."
+echo "[*] Adding Mozilla Team PPA..."
 add-apt-repository ppa:mozillateam/ppa -y
-add-apt-repository universe -y || true
 apt-get update
 
 # Pin Firefox to the Mozilla PPA to avoid Snap version
