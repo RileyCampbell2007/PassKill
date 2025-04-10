@@ -54,9 +54,37 @@ apt-get install -y --allow-change-held-packages \
     btrfs-progs xfsprogs udisks2 smartmontools parted \
     gvfs-backends gvfs-fuse network-manager network-manager-gnome \
     htop iotop ncdu lsof file lshw usbutils clonezilla testdisk \
-    sleuthkit binwalk partimage python3-hivex python3-pip firefox
+    sleuthkit binwalk partimage python3-hivex python3-pip firefox git
     
-pip install whiptail-dialogs --break-system-packages
+pip install whiptail-dialogs --break-system-packages || pip install whiptail-dialogs
+
+# Ubuntu doesn't include the NTFS-3G System Compression plugin so we build it from source
+echo "[*] Building NTFS-3G System Compression plugin..."
+
+apt-get install -y \
+    autoconf automake libtool pkg-config \
+    ntfs-3g-dev libfuse-dev build-essential
+
+currentWD=$(pwd)
+cd /passkill
+git clone https://github.com/ebiggers/ntfs-3g-system-compression.git ntfs-3g-system-compression
+cd /passkill/ntfs-3g-system-compression
+autoreconf -i
+chmod +x ./configure
+./configure
+make
+ntfsPluginDir=$(ntfs-3g -h 2>&1 | grep "Plugin path: " | cut -d':' -f2 | cut -c2-)
+mkdir -p $ntfsPluginDir
+cp "$(find /passkill/ntfs-3g-system-compression -name 'ntfs-plugin-80000017.so')" "$ntfsPluginDir"
+cd $currentWD
+rm -rf /passkill/ntfs-3g-system-compression
+
+apt-get purge -y \
+    autoconf automake libtool pkg-config \
+    ntfs-3g-dev libfuse-dev build-essential
+
+apt-get autoremove -y --purge
+
 
 # Disable GDM and enable getty@tty1
 echo "[*] Disabling GDM and ensuring getty on tty1..."
