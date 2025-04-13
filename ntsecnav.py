@@ -43,7 +43,15 @@ class SAMEditor:
     def _list_windows_users(self, mount_point: Path) -> List[Tuple[str, str]]:
         try:
             hive = hivex.Hivex(str(mount_point / WINDOWS_SAM_PATH))
-            return [(rid, username) for rid, username in sam.get_user_list(hive).items()]
+            users = []
+            sam_list = sam.get_user_list(hive)
+            for rid, user in sam_list.items():
+                if user["fullname"]:
+                    desc_str = f"{user['fullname']} ({user['username']})"
+                else:
+                    desc_str = user["username"]
+                users.append((rid, desc_str))
+            return users
         except Exception:
             self.ui.show_exception("Failed to list Windows users")
             return []
@@ -88,15 +96,12 @@ class SAMEditor:
             hive.commit(str(sam_path))
 
             msg = f"Changes applied successfully. Backup: {backup_name}" if backup_name else \
-                  "Changes applied successfully (no backup created)"
+                "Changes applied successfully (no backup created)"
             self.ui.msgbox(msg)
             return True
 
         except Exception:
             self.ui.show_exception("Error modifying SAM database")
-            if backup_name and self.ui.yesno("Restore from backup?"):
-                restored = backupManager.restore_backup(mount_point, backup_name)
-                self.ui.msgbox("Backup restored" if restored else "Failed to restore backup")
             return False
 
     def _handle_user_modification(self, mount_point: Path) -> None:
