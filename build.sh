@@ -58,6 +58,19 @@ apt-get install -y --allow-change-held-packages \
     
 pip install whiptail-dialogs --break-system-packages || pip install whiptail-dialogs
 
+# Repair Gnome Control Center
+echo "[*] Repairing Gnome Control Center..."
+
+DEPENDENCIES=$(apt-cache depends "gnome-control-center" | \
+    grep "Depends:" | \
+    awk '{print $2}' | \
+    tr '\n' ' ' | \
+    sed 's/ *$//')
+
+apt-get reinstall -y --allow-change-held-packages \
+    gnome-control-center \
+    $DEPENDENCIES
+
 # Ubuntu doesn't include the NTFS-3G System Compression plugin so we build it from source
 echo "[*] Building NTFS-3G System Compression plugin..."
 
