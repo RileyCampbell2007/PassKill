@@ -50,7 +50,7 @@ apt-mark hold firefox || true
 # Install required packages
 echo "[*] Installing packages..."
 apt-get install -y --allow-change-held-packages \
-    gnome-disk-utility gparted ntfs-3g exfatprogs dosfstools \
+    crudini gnome-disk-utility gparted ntfs-3g exfatprogs dosfstools \
     btrfs-progs xfsprogs udisks2 smartmontools parted \
     gvfs-backends gvfs-fuse network-manager network-manager-gnome \
     htop iotop ncdu lsof file lshw usbutils clonezilla testdisk \
@@ -193,5 +193,50 @@ if [[ "$(tty)" == "/dev/tty1" ]]; then
   sudo /usr/bin/env python3 /passkill/main.py
 fi
 EOF
+
+echo "[*] Configuring GSettings overrides..."
+
+GSCHEMA_OVERRIDE="/usr/share/glib-2.0/schemas/10_ubuntu-settings.gschema.override"
+
+# Define the favorite apps array string
+FAVORITE_APPS_VALUE="['firefox.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.DiskUtility.desktop', 'gparted.desktop']"
+
+touch "$GSCHEMA_OVERRIDE"
+
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.shell' 'favorite-apps' "$FAVORITE_APPS_VALUE"
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.desktop.interface:GNOME-Greeter' 'gtk-theme' '"Yaru-dark"' # Note quotes for string
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.desktop.interface:GNOME-Greeter' 'icon-theme' '"Yaru-dark"' # Note quotes for string
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.shell:ubuntu' 'favorite-apps' "$FAVORITE_APPS_VALUE"
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.desktop.interface:ubuntu' 'gtk-theme' '"Yaru-dark"' # Note quotes for string
+crudini --set "$GSCHEMA_OVERRIDE" 'org.gnome.desktop.interface:ubuntu' 'icon-theme' '"Yaru-dark"' # Note quotes for string
+
+echo "[*] Creating GSettings override to disable suspend and screen blanking..."
+
+GSCHEMA_DIR="/usr/share/glib-2.0/schemas"
+POWER_OVERRIDE_FILE="$GSCHEMA_DIR/99_passkill-power-settings.gschema.override"
+
+# Create the override file content
+cat <<EOF > "$POWER_OVERRIDE_FILE"
+[org.gnome.desktop.session]
+# Set idle-delay to 0 to disable screen blanking due to inactivity
+idle-delay=uint32 0
+
+[org.gnome.settings-daemon.plugins.power]
+# Disable automatic suspend when on battery power
+sleep-inactive-battery-type='nothing'
+# Disable automatic suspend when on AC power
+sleep-inactive-ac-type='nothing'
+# Set suspend timeouts to 0 (effectively disabled, reinforces the type setting)
+sleep-inactive-battery-timeout=0
+sleep-inactive-ac-timeout=0
+EOF
+
+echo "[*] Recompiling GSettings schemas..."
+glib-compile-schemas /usr/share/glib-2.0/schemas/
+
+echo "[*] Cleaning up"
+apt-get purge crudini -y
+apt-get autoremove -y --purge
+apt-get clean
 
 echo "[✓] Setup complete!"
