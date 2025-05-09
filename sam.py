@@ -94,7 +94,7 @@ def remove_password(hive: hivex.Hivex, user_rid: str) -> bool:
     if len(v_value_data) < 0xCC:
         raise Exception("V value is too short to contain valid password fields")
 
-    offsets = [0x70,0x78,0xA0,0xA8,0xB0]
+    offsets = [0xA0,0xAC]
 
     for offset in offsets:
         v_value_data[offset:offset+4] = b"\x00\x00\x00\x00"
