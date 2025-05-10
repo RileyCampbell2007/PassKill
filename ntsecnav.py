@@ -92,6 +92,20 @@ class SAMEditor:
 
             if not sam.remove_password(hive, rid):
                 raise RuntimeError("Failed to reset password")
+            
+            # Load and parse F value
+            fval = sam.load_f_value(hive, rid)
+
+            # Check for disabled/locked status
+            if fval.flags["ACB_DISABLED"]:
+                if self.ui.yesno("This account is currently DISABLED. Enable it?"):
+                    fval.flags["ACB_DISABLED"] = False
+            if fval.flags["ACB_AUTOLOCK"]:
+                if self.ui.yesno("This account is currently LOCKED. Unlock it?"):
+                    fval.flags["ACB_AUTOLOCK"] = False
+
+            # Save updated F value
+            sam.save_f_value(hive, rid, fval)
 
             hive.commit(str(sam_path))
 
@@ -118,9 +132,13 @@ class SAMEditor:
             hive = hivex.Hivex(str(mount_point / WINDOWS_SAM_PATH))
             is_msa = self._is_microsoft_account(hive, selected_rid)
 
-            options = [("Reset Password", "Clear the user's password")]
+            options = [
+                ("Reset Password", "Clear the user's password"),
+                ("Modify Flags", "Enable/disable the account, or edit account flags")
+            ]
             if is_msa:
-                options.append(("Downgrade & Reset", "Convert MS account to local and clear password"))
+                options.insert(1, ("Downgrade & Reset", "Convert MS account to local and clear password"))
+
 
             action = self.ui.menu("Select operation:", options)
             if action == "Reset Password":
@@ -129,6 +147,27 @@ class SAMEditor:
             elif action == "Downgrade & Reset":
                 if self._modify_user(mount_point, selected_rid, downgrade=True):
                     self.ui.msgbox(f"{selected_rid} converted to local account and password reset.")
+            elif action == "Modify Flags":
+                try:
+                    hive = hivex.Hivex(str(mount_point / WINDOWS_SAM_PATH), write=True)
+                    fval = sam.load_f_value(hive, selected_rid)
+
+                    # Checklist UI
+                    checklist_options = [
+                        (flag.replace("ACB_", ""), "", fval.flags[flag])
+                        for flag in fval.ACB_FLAGS
+                    ]
+                    selected_flags = self.ui.checklist("Account Flags", checklist_options)
+                    if selected_flags not in [None,[]]:
+                        for flag in fval.ACB_FLAGS:
+                            fval.flags[flag] = flag in selected_flags
+                        sam.save_f_value(hive, selected_rid, fval)
+                        hive.commit(str(mount_point / WINDOWS_SAM_PATH))
+                        self.ui.msgbox("Account flags updated successfully.")
+
+                except Exception:
+                    self.ui.show_exception("Failed to update account flags")
+
 
         except Exception:
             self.ui.show_exception("Error accessing SAM database")

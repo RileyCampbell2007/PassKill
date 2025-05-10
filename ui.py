@@ -57,3 +57,18 @@ class UserInterface:
         size = PartitionManager.get_human_size(info["size"])
         fstype = info.get("fstype", "unknown")
         return f"{size} - {fstype}"
+
+    def checklist(self, message: str, options: List[Tuple[str, str, bool]]) -> Optional[List[str]]:
+        """
+        Display a checklist of togglable options.
+
+        Args:
+            message: The dialog message
+            options: A list of (tag, description, checked) items
+
+        Returns:
+            List of tag strings selected, or None on cancel
+        """
+        items = [(tag, desc, "on" if checked else "off") for tag, desc, checked in options]
+        result = self.whiptail.checklist(message, items)
+        return result[0] if result else None

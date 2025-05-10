@@ -145,3 +145,92 @@ def convert_to_local_account(hive: hivex.Hivex, user_rid: str) -> bool:
     })
     
     return True
+
+class FValue:
+    ACB_FLAGS = {
+        "ACB_DISABLED":  0x0001,
+        "ACB_HOMDIRREQ": 0x0002,
+        "ACB_PWNOTREQ":  0x0004,
+        "ACB_TEMPDUP":   0x0008,
+        "ACB_NORMAL":    0x0010,
+        "ACB_MNS":       0x0020,
+        "ACB_DOMTRUST":  0x0040,
+        "ACB_WSTRUST":   0x0080,
+        "ACB_SVRTRUST":  0x0100,
+        "ACB_PWNOEXP":   0x0200,
+        "ACB_AUTOLOCK":  0x0400,
+    }
+
+    def __init__(self, f_data: bytes):
+        if len(f_data) < 0x44:
+            raise ValueError("F value is too short to contain account flags.")
+        self._raw = bytearray(f_data)
+        self._flags_offset = 0x38
+        self._flags = int.from_bytes(self._raw[self._flags_offset:self._flags_offset + 4], 'little')
+
+    @property
+    def flags(self):
+        return FFlagDict(self)
+
+    def to_bytes(self) -> bytes:
+        return bytes(self._raw)
+
+class FFlagDict:
+    def __init__(self, parent: FValue):
+        self._parent = parent
+
+    def __getitem__(self, key: str) -> bool:
+        bit = FValue.ACB_FLAGS.get(key)
+        if bit is None:
+            raise KeyError(f"Unknown flag: {key}")
+        return bool(self._parent._flags & bit)
+
+    def __setitem__(self, key: str, value: bool):
+        bit = FValue.ACB_FLAGS.get(key)
+        if bit is None:
+            raise KeyError(f"Unknown flag: {key}")
+        if value:
+            self._parent._flags |= bit
+        else:
+            self._parent._flags &= ~bit
+        self._parent._raw[self._parent._flags_offset:self._parent._flags_offset + 4] = \
+            self._parent._flags.to_bytes(4, 'little')
+
+def load_f_value(hive: hivex.Hivex, user_rid: str) -> FValue:
+    """
+    Load and parse the F value for a user RID into an FValue object.
+    """
+    key_path = ["SAM", "Domains", "Account", "Users", user_rid]
+    key = hive.root()
+    for part in key_path:
+        key = hive.node_get_child(key, part)
+        if key is None:
+            raise Exception(f"Key not found: {'\\'.join(key_path)}")
+
+    f_value_id = hive.node_get_value(key, "F")
+    if f_value_id is None:
+        raise Exception("F value not found in user key")
+
+    f_type, f_data = hive.value_value(f_value_id)
+    if f_data is None or f_type != hive_types.REG_BINARY:
+        raise Exception("Invalid or missing F value data")
+
+    return FValue(f_data)
+
+
+def save_f_value(hive: hivex.Hivex, user_rid: str, fval: FValue) -> None:
+    """
+    Save the modified FValue object back to the registry.
+    """
+    key_path = ["SAM", "Domains", "Account", "Users", user_rid]
+    key = hive.root()
+    for part in key_path:
+        key = hive.node_get_child(key, part)
+        if key is None:
+            raise Exception(f"Key not found: {'\\'.join(key_path)}")
+
+    hive.node_set_value(key, {
+        "key": "F",
+        "t": hive_types.REG_BINARY,
+        "value": fval.to_bytes()
+    })
