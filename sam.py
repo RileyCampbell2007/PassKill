@@ -384,51 +384,31 @@ def get_group_members(hive: hivex.Hivex, rid: str, domain: str = "Builtin") -> L
 
     return rids
 
-def rebuild_group_c_value(original: bytes, new_sids: List[bytes]) -> bytes:
-    """
-    Safely rebuild a group's C value by copying the original header and only updating the offsets.
-    
-    Args:
-        original: The original C value
-        new_sids: List of new member SIDs as bytes
-    
-    Returns:
-        Rebuilt C value as bytes
-    """
+def patch_group_c_value(original: bytes, new_sids: List[bytes]) -> bytes:
     val_data = bytearray(original)
     base = 0x34
 
-    # Extract the full original header
-    header = bytearray(val_data[:0x34])
+    # Preserve members_ofs
+    members_ofs = int.from_bytes(val_data[0x28:0x2C], 'little')
+    sid_start = base + members_ofs
+    old_len = int.from_bytes(val_data[0x2C:0x30], 'little')
 
-    # Offsets and lengths for group name and comment (relative to original layout)
-    old_name_ofs = int.from_bytes(header[0x10:0x14], 'little')
-    name_len = int.from_bytes(header[0x14:0x18], 'little')
-    old_comment_ofs = int.from_bytes(header[0x1C:0x20], 'little')
-    comment_len = int.from_bytes(header[0x20:0x24], 'little')
+    new_blob = b''.join(new_sids)
+    new_len = len(new_blob)
 
-    # Extract the actual UTF-16LE data blocks
-    name = val_data[base + old_name_ofs: base + old_name_ofs + name_len]
-    comment = val_data[base + old_comment_ofs: base + old_comment_ofs + comment_len]
+    # Resize if necessary
+    new_val = bytearray(val_data)
+    if new_len > old_len:
+        padding = b'\x00' * (new_len - old_len)
+        new_val = new_val[:sid_start] + new_blob + padding + new_val[sid_start + old_len:]
+    else:
+        new_val[sid_start:sid_start + new_len] = new_blob
+        new_val = new_val[:sid_start + new_len] + new_val[sid_start + old_len:]
 
-    # Rebuild layout
-    sid_blob = b''.join(new_sids)
-    new_members_len = len(sid_blob)
-    new_members_count = len(new_sids)
-
-    new_name_ofs = new_members_len
-    new_comment_ofs = new_name_ofs + len(name)
-
-    # Patch updated offsets/lengths
-    header[0x10:0x14] = new_name_ofs.to_bytes(4, 'little')
-    header[0x14:0x18] = len(name).to_bytes(4, 'little')
-    header[0x1C:0x20] = new_comment_ofs.to_bytes(4, 'little')
-    header[0x20:0x24] = len(comment).to_bytes(4, 'little')
-    header[0x28:0x2C] = (0).to_bytes(4, 'little')  # members_ofs is always 0
-    header[0x2C:0x30] = new_members_len.to_bytes(4, 'little')
-    header[0x30:0x34] = new_members_count.to_bytes(4, 'little')
-
-    return bytes(header + sid_blob + name + comment)
+    # Patch lengths
+    new_val[0x2C:0x30] = new_len.to_bytes(4, 'little')
+    new_val[0x30:0x34] = len(new_sids).to_bytes(4, 'little')
+    return bytes(new_val)
 
 def add_user_to_group(hive: hivex.Hivex, user_rid: str, group_rid: str, domain: str = "Builtin") -> bool:
     key_path = ["SAM", "Domains", domain, "Aliases", group_rid.upper()]
@@ -462,7 +442,7 @@ def add_user_to_group(hive: hivex.Hivex, user_rid: str, group_rid: str, domain: 
         return False
 
     existing_sids.append(new_sid)
-    new_blob = rebuild_group_c_value(val_data, existing_sids)
+    new_blob = patch_group_c_value(val_data, existing_sids)
 
     hive.node_set_value(key, {
         "key": "C",
@@ -508,7 +488,7 @@ def remove_user_from_group(hive: hivex.Hivex, user_rid: str, group_rid: str, dom
     if not removed:
         return False
 
-    new_blob = rebuild_group_c_value(val_data, new_sids)
+    new_blob = patch_group_c_value(val_data, new_sids)
     hive.node_set_value(key, {
         "key": "C",
         "t": val_type,

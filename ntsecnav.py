@@ -135,7 +135,7 @@ class SAMEditor:
             options = [
                 ("Reset Password", "Clear the user's password"),
                 ("Modify Flags", "Enable/disable the account, or edit account flags"),
-                # ("Modify Group Membership", "Add/remove the account to/from groups") Disabled becuase it's completely fucked
+                ("Modify Group Membership", "Add/remove the account to/from groups") # Disabled becuase it's completely fucked
             ]
             if is_msa:
                 options.insert(1, ("Downgrade & Reset", "Convert MS account to local and clear password"))
@@ -211,7 +211,7 @@ class SAMEditor:
                                 if selected_rid in groups[group]['members']:
                                     sam.remove_user_from_group(hive, selected_rid, group)
                             elif selected_rid not in groups[group]['members']:
-                                sam.add_user_to_group(hive,selected_rid)
+                                sam.add_user_to_group(hive, selected_rid, group)
                         
                         hive.commit(str(mount_point / WINDOWS_SAM_PATH))
                         msg = f"Account groups updated successfully. Backup: {backup_name}" if backup_name else \
