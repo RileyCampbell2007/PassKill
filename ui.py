@@ -23,7 +23,7 @@ class UserInterface:
     def menu(self, title: str, options: List[Tuple[str, str]]) -> Optional[str]:
         """Display a menu and return selected item key."""
         result = self.whiptail.menu(title, options)
-        return result[0] if result else None
+        return result[0] if result[1]==0 else None
 
     def msgbox(self, message: str) -> None:
         """Display a message box."""
@@ -71,4 +71,4 @@ class UserInterface:
         """
         items = [(tag, desc, "on" if checked else "off") for tag, desc, checked in options]
         result = self.whiptail.checklist(message, items)
-        return result[0] if result else None
+        return result[0] if result[1]==0 else None

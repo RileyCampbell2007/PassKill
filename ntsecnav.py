@@ -1,6 +1,6 @@
 import hivex
 import shutil
-import traceback
+import os
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 
@@ -134,21 +134,23 @@ class SAMEditor:
 
             options = [
                 ("Reset Password", "Clear the user's password"),
-                ("Modify Flags", "Enable/disable the account, or edit account flags")
+                ("Modify Flags", "Enable/disable the account, or edit account flags"),
+                # ("Modify Group Membership", "Add/remove the account to/from groups") Disabled becuase it's completely fucked
             ]
             if is_msa:
                 options.insert(1, ("Downgrade & Reset", "Convert MS account to local and clear password"))
 
+            display_name = [u[1] for u in users if u[0] == selected_rid][0]
 
             action = self.ui.menu("Select operation:", options)
             if action == "Reset Password":
                 if self._modify_user(mount_point, selected_rid):
-                    self.ui.msgbox(f"{selected_rid}'s password was reset. Try logging in with empty password if asked.")
+                    self.ui.msgbox(f"{display_name}'s password was reset. Try logging in with empty password if asked.")
             elif action == "Downgrade & Reset":
                 if self._modify_user(mount_point, selected_rid, downgrade=True):
-                    self.ui.msgbox(f"{selected_rid} converted to local account and password reset.")
+                    self.ui.msgbox(f"{display_name}'s password was reset and the account was downgraded to a local account. Try logging in with empty password if asked.")
             elif action == "Modify Flags":
-                try:
+                try: 
                     hive = hivex.Hivex(str(mount_point / WINDOWS_SAM_PATH), write=True)
                     fval = sam.load_f_value(hive, selected_rid)
 
@@ -158,15 +160,66 @@ class SAMEditor:
                         for flag in fval.ACB_FLAGS
                     ]
                     selected_flags = self.ui.checklist("Account Flags", checklist_options)
-                    if selected_flags not in [None,[]]:
+                    if selected_flags is not None:
+                        backupManager = BackupManager(self.ui)
+                        backup_name = backupManager.create_backup(mount_point)
+                        if not backup_name:
+                            if not self.ui.yesno("Warning: Could not create backup\n\nContinue?"):
+                                return False
+                            
                         for flag in fval.ACB_FLAGS:
-                            fval.flags[flag] = flag in selected_flags
+                            fval.flags[flag] = flag.replace("ACB_", "") in selected_flags
                         sam.save_f_value(hive, selected_rid, fval)
                         hive.commit(str(mount_point / WINDOWS_SAM_PATH))
-                        self.ui.msgbox("Account flags updated successfully.")
+                        msg = f"Account flags updated successfully. Backup: {backup_name}" if backup_name else \
+                            "Account flags updated successfully. (no backup created)"
+                        self.ui.msgbox(msg)
 
                 except Exception:
                     self.ui.show_exception("Failed to update account flags")
+            
+            elif action == "Modify Group Membership":
+                try:    
+                    hive = hivex.Hivex(str(mount_point / WINDOWS_SAM_PATH), write=True)
+                    
+                    groups = sam.get_group_list(hive)
+
+                    for group in groups:
+                        members = sam.get_group_members(hive, group)
+                        groups[group]["members"] = members
+
+                    # Checklist UI
+
+                    max_username_length = max(len(groups[group]['groupname']) for group in groups)
+                    max_width = os.get_terminal_size().columns - 41
+                    if max_width > 186:
+                        max_width = 186
+                    checklist_options = []
+                    for group in groups:
+                        display_name = groups[group]['groupname'].ljust(max_username_length) + " - " + groups[group]['comment'] + ' '
+                        checklist_options.append((group, display_name if len(display_name) < max_width else display_name[:max_width-4] + "... ", selected_rid in groups[group]['members']))
+
+                    selected_groups = self.ui.checklist("Account Groups", checklist_options)
+                    if selected_groups is not None:
+                        backupManager = BackupManager(self.ui)
+                        backup_name = backupManager.create_backup(mount_point)
+                        if not backup_name:
+                            if not self.ui.yesno("Warning: Could not create backup\n\nContinue?"):
+                                return False
+                        for group in groups:
+                            if group not in selected_groups:
+                                if selected_rid in groups[group]['members']:
+                                    sam.remove_user_from_group(hive, selected_rid, group)
+                            elif selected_rid not in groups[group]['members']:
+                                sam.add_user_to_group(hive,selected_rid)
+                        
+                        hive.commit(str(mount_point / WINDOWS_SAM_PATH))
+                        msg = f"Account groups updated successfully. Backup: {backup_name}" if backup_name else \
+                            "Account groups updated successfully. (no backup created)"
+                        self.ui.msgbox(msg)
+
+                except Exception:
+                    self.ui.show_exception("Failed to update account groups")
 
 
         except Exception:
