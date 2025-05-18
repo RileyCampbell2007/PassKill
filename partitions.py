@@ -17,10 +17,14 @@ class PartitionManager:
         Returns a string like '2.35 GB', '540 MB', etc.
         """
         size_units = [
-            (1 << 40, "TB"),
-            (1 << 30, "GB"),
-            (1 << 20, "MB"),
-            (1 << 10, "KB"),
+            (1 << 80, "YiB"),
+            (1 << 70, "ZiB"),
+            (1 << 60, "EiB"),
+            (1 << 50, "PiB"),
+            (1 << 40, "TiB"),
+            (1 << 30, "GiB"),
+            (1 << 20, "MiB"),
+            (1 << 10, "KiB"),
             (1, "bytes")
         ]
 
@@ -70,8 +74,8 @@ class PartitionManager:
             # Unmount first in case it's already mounted
             subprocess.run(["sudo", "umount", partition_path], check=False, stderr=subprocess.DEVNULL)
 
-            # Repair with ntfsfix before mounting
-            subprocess.run(["sudo", "ntfsfix", partition_path], check=True, stdout=subprocess.DEVNULL)
+            # Repair with ntfsfix before mounting, don't check becuase sometimes it errors when trying to remount
+            subprocess.run(["sudo", "ntfsfix", partition_path], check=False, stdout=subprocess.DEVNULL)
 
             # Mount using read/write and hibernation-safe options
             subprocess.run(
