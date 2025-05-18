@@ -6,6 +6,7 @@ PassKill is a utility for resetting Windows passwords on NT-based systems, manag
 
 - Resetting forgotten Windows passwords  
 - Converting Microsoft accounts to local accounts  
+- Managing user account flags and group membership  
 - Creating accessibility backdoors  
 - Retrieving the Windows product key  
 - Performing low-level file and partition recovery  
@@ -19,6 +20,7 @@ PassKill is a utility for resetting Windows passwords on NT-based systems, manag
 - **SAM Backup Management**: Create, restore, and manage SAM backups  
 - **Accessibility Backdoor**: Replace `Magnify.exe` with `cmd.exe` for SYSTEM access  
 - **Activation Key Extraction**: Retrieve the Windows product key from the registry  
+- **Flag & Group Management**: View and modify user account flags and group memberships  
 - **Recovery Tools**: Includes TestDisk, PhotoRec, and more  
 - **User-Friendly Interface**: Text-based UI using Whiptail dialogs  
 
@@ -38,17 +40,20 @@ Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://r
    sudo apt-add-repository ppa:cubic-wizard/release
    sudo apt update
    sudo apt install cubic
-   ```
+   ````
 
 2. **Launch Cubic** and select your Ubuntu 24.04.2 Desktop ISO
 
 3. **In the Cubic chroot environment**:
-   - Copy all PassKill files to `/passkill/`
-   - Make `build.sh` executable:
+
+   * Copy all PassKill files to `/passkill/`
+   * Make `build.sh` executable:
+
      ```bash
      chmod +x /passkill/build.sh
      ```
-   - Execute the build script:
+   * Execute the build script:
+
      ```bash
      /passkill/build.sh
      ```
@@ -61,21 +66,26 @@ Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://r
 
 Upon booting from the modified ISO, PassKill will launch automatically on tty1. The main menu provides:
 
-1. **NT Security Navigation** - Core password reset functionality  
-   - Reset Windows passwords  
-   - Downgrade Microsoft accounts to local accounts  
-   - Manage SAM backups  
-   - Create/remove accessibility backdoors  
-   - Retrieve Windows product key  
+1. **NT Security Navigation** - Core password reset functionality
 
-2. **Recovery Tools**  
-   - TestDisk – Partition recovery  
-   - PhotoRec – File recovery  
+   * Reset Windows passwords
+   * Downgrade Microsoft accounts to local accounts
+   * Manage SAM backups
+   * View/edit user account flags
+   * View/edit user group membership
+   * Create/remove accessibility backdoors
+   * Retrieve Windows product key
 
-3. **System Options**  
-   - Shell access  
-   - Launch GNOME GUI  
-   - Reboot/Shutdown  
+2. **Recovery Tools**
+
+   * TestDisk – Partition recovery
+   * PhotoRec – File recovery
+
+3. **System Options**
+
+   * Shell access
+   * Launch GNOME GUI
+   * Reboot/Shutdown
 
 ---
 
@@ -83,39 +93,32 @@ Upon booting from the modified ISO, PassKill will launch automatically on tty1. 
 
 ### 🔐 Password Reset
 
-1. Select **NT Security Navigation**  
-2. Choose the Windows partition  
-3. Select the user account  
-4. Choose to reset password or downgrade the account  
+1. Select **NT Security Navigation**
+2. Choose the Windows partition
+3. Select the user account
+4. Choose to reset password or downgrade the account
+
+### ⚙️ Flag & Group Management
+
+1. Select **NT Security Navigation**
+2. Choose the Windows partition
+3. Select the user account
+   * Choose **Modify Flags** to toggle account status options (e.g., disabled, locked, password required)
+   * Choose **Modify Group Membership** to add or remove group memberships
 
 ### 🦺 Accessibility Backdoor
 
-1. Select **NT Security Navigation**  
-2. Choose the Windows partition  
-3. Select **Accessibility Backdoor**  
-4. Choose to create or remove the backdoor  
+1. Select **NT Security Navigation**
+2. Choose the Windows partition
+3. Select **Accessibility Backdoor**
+4. Choose to create or remove the backdoor
 
 ### 🗝️ Retrieve Product Key
 
-1. Select **NT Security Navigation**  
-2. Choose the Windows partition  
-3. Select **Get Product Key**  
-4. The tool will attempt to extract and display the Windows activation key  
-
----
-
-## Dependencies
-
-These dependencies are automatically installed by the build script:
-
-```bash
-python3-hivex
-python3-pip
-ntfs-3g
-hivex
-# Installed via pip:
-whiptail-dialogs
-```
+1. Select **NT Security Navigation**
+2. Choose the Windows partition
+3. Select **Get Product Key**
+4. The tool will attempt to extract and display the Windows activation key
 
 ---
 
