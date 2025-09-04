@@ -29,42 +29,13 @@ PassKill is a utility for resetting Windows passwords on NT-based systems, manag
 ## Downloading
 Due to the large size of OS ISOs the files can't be hosted by GitHub, however they can be downloaded [here](https://scarletvoid.com/PassKill-Releases/).
 
-## Building with Cubic
+## Building
 
-📦 _Building is only required if you are customizing the ISO yourself. If using a prebuilt ISO, you may skip this section._
-
-Building has been tested on the [Ubuntu 24.04.2 Desktop installer ISO](https://releases.ubuntu.com/noble/)
-
-1. **Install Cubic**:
-   ```bash
-   sudo apt-add-repository ppa:cubic-wizard/release
-   sudo apt update
-   sudo apt install cubic
-   ````
-
-2. **Launch Cubic** and select your Ubuntu 24.04.2 Desktop ISO
-
-3. **In the Cubic chroot environment**:
-
-   * Copy all PassKill files to `/passkill/`
-   * Make `build.sh` executable:
-
-     ```bash
-     chmod +x /passkill/build.sh
-     ```
-   * Execute the build script:
-
-     ```bash
-     /passkill/build.sh
-     ```
-
-4. **Complete the Cubic process** to generate your modified ISO
-
----
+Please see the [PassKill-Build](https://github.com/RileyCampbell2007/PassKill-Build) repository for building
 
 ## Usage
 
-Upon booting from the modified ISO, PassKill will launch automatically on tty1. The main menu provides:
+Upon booting from the ISO, PassKill will launch automatically. The main menu provides:
 
 1. **NT Security Navigation** - Core password reset functionality
 
