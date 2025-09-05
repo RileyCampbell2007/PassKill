@@ -9,6 +9,7 @@ are permitted provided that the conditions in the LICENSE file are met.
 
 import subprocess
 import shutil
+import os
 from typing import List, Tuple
 
 from globals import DEVMODE
@@ -110,9 +111,10 @@ class MainApplication:
     def run_shell(self) -> None:
         """Launch an interactive bash shell."""
         subprocess.run([
+            "sudo", "-u", "passkill",
             "/bin/bash", "-c",
             'cd $HOME; clear; echo \'Run "exit" to return to menu\'; /bin/bash'
-        ])
+        ], env=os.environ)
 
     def launch_gui(self) -> None:
         """Start the GNOME desktop environment."""
