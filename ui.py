@@ -10,7 +10,11 @@ class UserInterface:
     """Handles all user interactions via whiptail."""
 
     def __init__(self) -> None:
-        self.whiptail = Whiptail(title="Pass Kill 2.0")
+        try:
+            title = open('/release','r').read()
+        except:
+            title = "PassKill"
+        self.whiptail = Whiptail(title=title)
 
     def show_license(self) -> None:
         """Display the software license."""
